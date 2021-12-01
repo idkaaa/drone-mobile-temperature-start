@@ -1,3 +1,8 @@
+// Remotely start drone-mobile vehicle if temperature is too hot
+// or too cold.
+// Source:
+// https://github.com/Hacksore/drone-mobile
+
 const username = 'user@name.com'
 const password = 'p@ssword'
 

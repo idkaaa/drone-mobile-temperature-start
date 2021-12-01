@@ -1,2 +1,5 @@
 # drone-mobile-temperature-start
-Remotely start your drone-mobile equipped vehicle 
+
+Node.js code to remotely start drone-mobile vehicle if temperature is too hot or too cold.
+
+Source: https://github.com/Hacksore/drone-mobile
