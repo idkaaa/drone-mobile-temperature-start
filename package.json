@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "dotenv": "^10.0.0",
     "drone-mobile": "^0.0.7"
   }
 }

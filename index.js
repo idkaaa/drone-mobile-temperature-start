@@ -3,13 +3,11 @@
 // Source:
 // https://github.com/Hacksore/drone-mobile
 
-const username = 'user@name.com'
-const password = 'p@ssword'
-
+require('dotenv').config();
 const DroneMobile = require('drone-mobile');
 const client = new DroneMobile({
-    username: username,
-    password: password
+    username: process.env.DRONE_MOBILE_USERNAME,
+    password: process.env.DRONE_MOBILE_PASSWORD
 });
 
 // degrees in 'murica
@@ -25,8 +23,8 @@ function IsTempOutOfRange(temperature)
 
 client.on('ready', async () =>
 {
-    isTempOutOfRange = false;
-    isCarStarted = false;
+    let isTempOutOfRange = false;
+    let isCarStarted = false;
 
     // get a list of vehicles on the account
     const vehicleList = await client.vehicles();
