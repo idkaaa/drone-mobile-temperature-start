@@ -11,18 +11,46 @@ const client = new DroneMobile({
 });
 
 // degrees in 'murica
-const TooHot = 80;
-const TooCold = 60;
+// TEMPERATURE_MURICAN_HIGH=78
+// TEMPERATURE_MURICAN_LOW-70
+// SECONDS_BETWEEN_CHECKS=60
+// IS_ENABLED=TRUE
+const TooHot = process.env.TEMPERATURE_MURICAN_HIGH;
+const TooCold = process.env.TEMPERATURE_MURICAN_LOW;
+const SecondsBetweenChecks = process.env.SECONDS_BETWEEN_CHECKS;
+
+function GetDateTimeString()
+{
+    let date_ob = new Date();
+    // current date
+    // adjust 0 before single digit date
+    let date = ("0" + date_ob.getDate()).slice(-2);
+    // current month
+    let month = ("0" + (date_ob.getMonth() + 1)).slice(-2);
+    // current year
+    let year = date_ob.getFullYear();
+    // current hours
+    let hours = date_ob.getHours();
+    // current minutes
+    let minutes = date_ob.getMinutes();
+    // current seconds
+    let seconds = date_ob.getSeconds();
+    // prints date & time in YYYY-MM-DD HH:MM:SS format
+    return year + "-" + month + "-" + date + " " + hours + ":" + minutes + ":" + seconds;
+}
+
 
 function IsTempOutOfRange(temperature)
 {
+    console.log('checking if temperature between ', TooHot, ' and ', TooCold);
     const isTempOutOfrange = (temperature < TooCold) || (temperature > TooHot);
     console.log('temperature out of range?: ', isTempOutOfrange);
     return isTempOutOfrange;
 }
 
-client.on('ready', async () =>
-{
+async function StartIfNeeded() {
+    console.log('Starting car if needed at: ', GetDateTimeString());
+
     let isTempOutOfRange = false;
     let isCarStarted = false;
 
@@ -61,5 +89,20 @@ client.on('ready', async () =>
         const response = await client.start(vehicle.device_key);
     } catch (err) {
         console.log('Err:', err);
+    }
+}
+
+function WaitMs(milisec) {
+    return new Promise(resolve => {
+        setTimeout(() => { resolve('') }, milisec);
+    })
+}
+
+client.on('ready', async () =>
+{
+    while(true) {
+        await StartIfNeeded();
+        console.log('Next check will run in ', SecondsBetweenChecks, ' seconds...');
+        await WaitMs(SecondsBetweenChecks*1000);
     }
 });
