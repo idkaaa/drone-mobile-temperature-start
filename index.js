@@ -59,16 +59,20 @@ async function StartIfNeeded() {
 
     // pick the first one
     const vehicle = vehicleList[0];
-
+    
     console.log('getting status for car:', vehicle.device_key);
 
     try {
         const response = await client.status(vehicle.device_key);
 
-        // degrees in 'murica
-        const temperature = response.last_known_state.controller.current_temperature * (9 / 5) + 32
-        console.log('current temperature: ', temperature);
-        isTempOutOfRange = IsTempOutOfRange(temperature);
+        if (process.env.SHOULD_IGNORE_TEMPERATURE) {
+            isTempOutOfRange = true;
+        }else {
+            // degrees in 'murica
+            const temperature = response.last_known_state.controller.current_temperature * (9 / 5) + 32
+            console.log('current temperature: ', temperature);
+            isTempOutOfRange = IsTempOutOfRange(temperature);
+        }
         isCarStarted = response.remote_start_status;
         console.log('car remote started?: ', isCarStarted);
     } catch (err) {
