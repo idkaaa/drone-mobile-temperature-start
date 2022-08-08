@@ -18,6 +18,15 @@ const client = new DroneMobile({
 const TooHot = process.env.TEMPERATURE_MURICAN_HIGH;
 const TooCold = process.env.TEMPERATURE_MURICAN_LOW;
 const SecondsBetweenChecks = process.env.SECONDS_BETWEEN_CHECKS;
+const SecondsToRun = process.env.SECONDS_TO_RUN;
+const ShouldIgnoreCarStartedState = process.env.SHOULD_IGNORE_CAR_STARTED;
+const ShouldIgnoreTemperature = process.env.SHOULD_IGNORE_TEMPERATURE;
+
+function WaitMs(milisec) {
+    return new Promise(resolve => {
+        setTimeout(() => { resolve('') }, milisec);
+    })
+}
 
 function GetDateTimeString()
 {
@@ -40,72 +49,93 @@ function GetDateTimeString()
 }
 
 
-function IsTempOutOfRange(temperature)
+function IsTempOutOfRange(status_response)
 {
+    if (ShouldIgnoreTemperature)
+    {
+        console.log('ignoring current temperature...');
+        return true;
+    }
+    // degrees in 'murica
+    const temperature = response.last_known_state.controller.current_temperature * (9 / 5) + 32
+    console.log('current temperature: ', temperature);
     console.log('checking if temperature between ', TooHot, ' and ', TooCold);
     const isTempOutOfrange = (temperature < TooCold) || (temperature > TooHot);
     console.log('temperature out of range?: ', isTempOutOfrange);
     return isTempOutOfrange;
 }
 
-async function StartIfNeeded() {
-    console.log('Starting car if needed at: ', GetDateTimeString());
-
-    let isTempOutOfRange = false;
-    let isCarStarted = false;
-
-    // get a list of vehicles on the account
-    const vehicleList = await client.vehicles();
-
-    // pick the first one
-    const vehicle = vehicleList[0];
-    
-    console.log('getting status for car:', vehicle.device_key);
-
-    try {
-        const response = await client.status(vehicle.device_key);
-
-        if (process.env.SHOULD_IGNORE_TEMPERATURE) {
-            isTempOutOfRange = true;
-        }else {
-            // degrees in 'murica
-            const temperature = response.last_known_state.controller.current_temperature * (9 / 5) + 32
-            console.log('current temperature: ', temperature);
-            isTempOutOfRange = IsTempOutOfRange(temperature);
-        }
-        isCarStarted = response.remote_start_status;
-        console.log('car remote started?: ', isCarStarted);
-    } catch (err) {
-        console.log('Err:', err);
+function IsCarStarted(status_response)
+{
+    if (ShouldIgnoreCarStartedState)
+    {
+        console.log('ignoring car started state...');
+        return false;
     }
+    isCarStarted = response.remote_start_status;
+    console.log('car remote started?: ', isCarStarted);
+    return isCarStarted;
+}
 
-    if (isTempOutOfRange === false) {
-        console.log("temp in range. exiting...");
-        return;
-    }
-    if (isCarStarted === true) {
-        console.log("car already remote started. exiting...");
-        return;
-    }
-
+async function StartCar(vehicle)
+{
     console.log('starting car: ', vehicle.device_key);
     try {
         const response = await client.start(vehicle.device_key);
+        console.log("start response: ", response);
     } catch (err) {
         console.log('Err:', err);
     }
 }
 
-function WaitMs(milisec) {
-    return new Promise(resolve => {
-        setTimeout(() => { resolve('') }, milisec);
-    })
+async function StopCar(vehicle)
+{
+    console.log('stopping car: ', vehicle.device_key);
+    try {
+        const response = await client.stop(vehicle.device_key);
+        console.log("stop response: ", response);
+    } catch (err) {
+        console.log('Err:', err);
+    }
 }
 
 client.on('ready', async () =>
 {
     while(true) {
-        await StartIfNeeded();
+        console.log('Starting car if needed at: ', GetDateTimeString());
+
+        // get a list of vehicles on the account
+        const vehicleList = await client.vehicles();
+
+        // pick the first one
+        const vehicle = vehicleList[0];
+        let response = null;
+        console.log('getting status for car:', vehicle.device_key);
+        
+        try {
+            response = await client.status(vehicle.device_key);
+            console.log('status: ', response);
+        } catch (err) {
+            console.log('Err:', err);
+        }
+
+        if (IsTempOutOfRange(response) === false) {
+            console.log("temp in range. exiting...");
+            return;
+        }
+        if (IsCarStarted(response) === true) {
+            console.log("car already remote started. exiting...");
+            return;
+        }
+
+        await StartCar(vehicle);
+
+        console.log('Seconds until car is stopped ', SecondsToRun);
+        await WaitMs(SecondsToRun*1000);
+
+        await StopCar(vehicle);
+        
+
         console.log('Next check will run in ', SecondsBetweenChecks, ' seconds...');
         await WaitMs(SecondsBetweenChecks*1000);
     }
