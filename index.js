@@ -99,26 +99,21 @@ async function StopCar(vehicle)
     }
 }
 
-client.on('ready', async () =>
+async function StartAndStopCar()
 {
-    while(true) {
-        console.log('Starting car if needed at: ', GetDateTimeString());
+    console.log('Starting car if needed at: ', GetDateTimeString());
 
-        // get a list of vehicles on the account
-        const vehicleList = await client.vehicles();
+    // get a list of vehicles on the account
+    const vehicleList = await client.vehicles();
 
-        // pick the first one
-        const vehicle = vehicleList[0];
-        let response = null;
+    // pick the first one
+    const vehicle = vehicleList[0];
+    let shouldStart = false;
+    try {
         console.log('getting status for car:', vehicle.device_key);
+        const response = await client.status(vehicle.device_key);
+        //console.log('status: ', response);
         
-        try {
-            response = await client.status(vehicle.device_key);
-            console.log('status: ', response);
-        } catch (err) {
-            console.log('Err:', err);
-        }
-
         if (IsTempOutOfRange(response) === false) {
             console.log("temp in range. exiting...");
             return;
@@ -127,15 +122,23 @@ client.on('ready', async () =>
             console.log("car already remote started. exiting...");
             return;
         }
+    } catch (err) {
+        console.log('Err:', err);
+    }
 
-        await StartCar(vehicle);
+    await StartCar(vehicle);
 
-        console.log('Seconds until car is stopped ', SecondsToRun);
-        await WaitMs(SecondsToRun*1000);
+    console.log('Seconds until car is stopped ', SecondsToRun);
+    await WaitMs(SecondsToRun*1000);
 
-        await StopCar(vehicle);
+    await StopCar(vehicle);
+}
+
+client.on('ready', async () =>
+{
+    while(true) {
+        await StartAndStopCar();
         
-
         console.log('Next check will run in ', SecondsBetweenChecks, ' seconds...');
         await WaitMs(SecondsBetweenChecks*1000);
     }
