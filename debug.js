@@ -54,6 +54,7 @@ function GetDateTimeString()
     return year + "-" + month + "-" + date + " " + hours + ":" + minutes + ":" + seconds;
 }
 
+
 function IsTempOutOfRange(temperature_celcius)
 {
     // degrees in 'murica
@@ -133,12 +134,12 @@ async function StartAndStopCar()
         console.log('Err:', err);
     }
 
-    await StartCar(vehicle);
+    //await StartCar(vehicle);
 
-    console.log('Seconds until car is stopped ', SecondsToRun);
-    await WaitMs(SecondsToRun*1000);
+    //console.log('Seconds until car is stopped ', SecondsToRun);
+    //await WaitMs(SecondsToRun*1000);
 
-    await StopCar(vehicle);
+    //await StopCar(vehicle);
 }
 
 function MainLoop()
@@ -152,7 +153,7 @@ function MainLoop()
 
 function run() {
     MainLoop();
-    setInterval(MainLoop, SecondsBetweenChecks*1000);
+    //setInterval(MainLoop, SecondsBetweenChecks*1000);
   };
   
 run();
