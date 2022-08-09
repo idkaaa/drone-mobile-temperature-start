@@ -5,10 +5,16 @@
 
 require('dotenv').config();
 const DroneMobile = require('drone-mobile');
-const client = new DroneMobile({
-    username: process.env.DRONE_MOBILE_USERNAME,
-    password: process.env.DRONE_MOBILE_PASSWORD
-});
+
+let client = null;
+
+function GetClient()
+{
+    return new DroneMobile({
+        username: process.env.DRONE_MOBILE_USERNAME,
+        password: process.env.DRONE_MOBILE_PASSWORD
+    });
+}
 
 // degrees in 'murica
 // TEMPERATURE_MURICAN_HIGH=78
@@ -22,7 +28,7 @@ const SecondsToRun = process.env.SECONDS_TO_RUN;
 const ShouldIgnoreCarStartedState = process.env.SHOULD_IGNORE_CAR_STARTED;
 const ShouldIgnoreTemperature = process.env.SHOULD_IGNORE_TEMPERATURE;
 
-function WaitMs(milisec) {
+async function WaitMs(milisec) {
     return new Promise(resolve => {
         setTimeout(() => { resolve('') }, milisec);
     })
@@ -134,12 +140,19 @@ async function StartAndStopCar()
     await StopCar(vehicle);
 }
 
-client.on('ready', async () =>
+function MainLoop()
 {
-    while(true) {
+    client = GetClient();
+    client.on('ready', async () =>
+    {
         await StartAndStopCar();
-        
-        console.log('Next check will run in ', SecondsBetweenChecks, ' seconds...');
-        await WaitMs(SecondsBetweenChecks*1000);
-    }
-});
+    });
+}
+
+function run() {
+    MainLoop();
+    setInterval(MainLoop, SecondsBetweenChecks*1000);
+  };
+  
+run();
+  
