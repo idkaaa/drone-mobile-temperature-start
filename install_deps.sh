@@ -5,5 +5,5 @@ apt upgrade
 
 apt install nodejs
 
-npm install dotenv
-npm install drone-mobile
+npm install -g dotenv
+npm install -g drone-mobile
